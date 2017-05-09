@@ -38,20 +38,15 @@ class TeacherSpider(CrawlSpider):
     #     print response.text
 
     def parse_item(self,response):
-        print response.text
-        #  ../input[@type='checkbox']/@id"
-        book_able = response.xpath(u"//div[@class='teacher']/li/span[@class='u-btn hover']")
-        return self.parse(response)
+      return self.parse(response)
 
     def request_teacher(self, request):
         cookie_text = self.get_cookies(self.cookie)
         return Request(request.url,callback=self.parse_teacher_lesson,cookies=cookie_text)
 
     def parse_teacher_lesson(self,response):
-
-        print '----------------',response.text
-
-
+        book_able = response.xpath("//div[@class='teacher']//li/input[@type='checkbox']/@id").extract()
+        print [x for x in  book_able]
 
 
 
