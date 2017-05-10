@@ -31,14 +31,7 @@ class TeacherSpider(CrawlSpider):
     def start_requests(self):
         cookie_text = self.get_cookies(self.cookie)
         for url in self.start_urls:
-            yield Request(url,callback=self.parse_item,cookies=cookie_text)
-
-    # def parse(self, response):
-    #     print '----------------'
-    #     print response.text
-
-    def parse_item(self,response):
-      return self.parse(response)
+            yield Request(url,cookies=cookie_text)
 
     def request_teacher(self, request):
         cookie_text = self.get_cookies(self.cookie)
