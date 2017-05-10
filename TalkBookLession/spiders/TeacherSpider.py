@@ -3,7 +3,7 @@
 from scrapy.linkextractors import LinkExtractor
 from scrapy.spiders import CrawlSpider,Rule
 from scrapy.http import Request
-
+from scrapy.http import FormRequest
 
 class TeacherSpider(CrawlSpider):
     name = 'TeacherSpider'
@@ -14,14 +14,15 @@ class TeacherSpider(CrawlSpider):
         Rule(LinkExtractor(allow=('http://www.51talk.com/teacher/info/t\d{7,10}')),process_request='request_teacher',callback='parse_teacher_lesson',follow=True,),
     )
     better_teachers = []
-    need_book_lessons = ['20170512_44',
-                         '20170516_44','20170516_45',
-                         '20170517_44','20170517_45',
-                         '20170518_44','20170518_45',
-                         '20170519_44','20170519_45',
-                         '20170520_45',
-                         '20170521_44','20170521_45',
-                         '20170522_44','20170522_45',
+    need_book_lessons = [
+                        # '20170512_44',
+                         # '20170516_44','20170516_45',
+                         # '20170517_44','20170517_45',
+                         # '20170518_44','20170518_45',
+                         # '20170519_44','20170519_45',
+                         # '20170520_45',
+                         # '20170521_44','20170521_45',
+                         # '20170522_44','20170522_45',
                          '20170523_44','20170523_45'
                          ]
 
@@ -54,15 +55,50 @@ class TeacherSpider(CrawlSpider):
     def parse_teacher_lesson(self,response):
         favor_state = response.xpath('//div[@class="favor f-fr"]/p/text()').extract_first(default="N/A")
         favor_count = favor_state.replace(u'人收藏','')
-        if int(favor_count) > 1000:
+        if int(favor_count) > 100:
             print favor_count,
         else:
             return
 
+        '''
+        appoint_type=multi&t_id=t4893630&date_time=20170510_47%2C20170510_48&showCustom=0&reduceCount=2&
+        is_price_course=&intelligent=2&ec_course_max=14&is_course_new=new&defaultTool=&is_selection_teacher=&
+        is_from_ea_recommend=&show_freetalk=1&has_freetalk_course=n&course_thr=8926%2C8927&cla_en=new&
+        tool=51TalkAC&lm_self_introduction=2&lm_recovery=2&Desc=
+
+        '''
+        cookie_text = self.get_cookies(self.cookie)
         book_able = response.xpath("//div[@class='teacher']//li/input[@type='checkbox']/@id").extract()
         for lesson in book_able:
             if lesson in self.need_book_lessons:
-                print lesson
+                print "lesson:",lesson
+                yield FormRequest(url='http://www.51talk.com/reserve/doReserve',cookies=cookie_text,
+                                          formdata={
+                                              'appoint_type':'multi',
+                                              't_id': lesson,
+                                              'date_time': lesson,
+                                              'showCustom': '0',
+                                              'reduceCount': '0',
+                                              'intelligent': '2',
+                                              'ec_course_max': '100',
+                                              'is_course_new': 'new',
+                                              'show_freetalk': '1',
+                                              'has_freetalk_course': 'n',
+                                              'cla_en': 'new',
+                                              'tool': '51TalkAC',
+                                              'lm_self_introduction': '2',
+                                              'lm_recovery': '2',
+                                          },
+                                          callback=self.book_lesson_result
+                                          )
+
+    def book_lesson_result(self,response):
+        print '============'
+        print response.text
+        # os.abort(）
+        #停止爬取
+        # https://groups.google.com/forum/m/#!msg/python-cn/3wcbVkOANdE/hS1CpP4bVuQJ
+
 
 
 
