@@ -4,16 +4,16 @@ from scrapy.linkextractors import LinkExtractor
 from scrapy.spiders import CrawlSpider,Rule
 from scrapy.http import Request
 from scrapy.http import FormRequest
+import requests
 
 class TeacherSpider(CrawlSpider):
     name = 'TeacherSpider'
     download_delay = 5
-    allowed_domains = ['51talk.com']
+    allowed_domains = ['51talk.com','baidu.com']
     start_urls = ['http://www.51talk.com/reserve/index']
     rules = (
         Rule(LinkExtractor(allow=('http://www.51talk.com/teacher/info/t\d{7,10}')),process_request='request_teacher',callback='parse_teacher_lesson',follow=True,),
     )
-    better_teachers = []
     need_book_lessons = [
                         # '20170512_44',
                          # '20170516_44','20170516_45',
@@ -25,8 +25,6 @@ class TeacherSpider(CrawlSpider):
                          # '20170522_44','20170522_45',
                          '20170523_44','20170523_45'
                          ]
-
-
     #http://www.51talk.com/teacher/info/t432950510
     # url_pattern = ['http://www.51talk.com/teacher/info/t39644339']
     # url_extractor = LxmlLinkExtractor(allow="http://www.51talk.com/teacher/info/t39644339")
@@ -59,47 +57,48 @@ class TeacherSpider(CrawlSpider):
             print favor_count,
         else:
             return
+        book_able = response.xpath("//div[@class='teacher']//li/input[@type='checkbox']/@id").extract()
+        for lesson in book_able:
+            if lesson in self.need_book_lessons:
+                self.book_lesson_for_id(lesson)
+
+    def book_lesson_for_id(self,teacher_id,lesson_id):
 
         '''
+        os.abort(）
+        停止爬取
+        https://groups.google.com/forum/m/#!msg/python-cn/3wcbVkOANdE/hS1CpP4bVuQJ
+        这里之所以用Requests,是因为Requests能够马上处理请求，
+        如果是yield FormRequest,则该Request会被加到Scarpy队列里，
+        一直等到该Request 之前的请求(通过Rule规则提取的请求)都处理完毕，才会处理该请求，
+        
+        请求体
         appoint_type=multi&t_id=t4893630&date_time=20170510_47%2C20170510_48&showCustom=0&reduceCount=2&
         is_price_course=&intelligent=2&ec_course_max=14&is_course_new=new&defaultTool=&is_selection_teacher=&
         is_from_ea_recommend=&show_freetalk=1&has_freetalk_course=n&course_thr=8926%2C8927&cla_en=new&
         tool=51TalkAC&lm_self_introduction=2&lm_recovery=2&Desc=
-
         '''
-        cookie_text = self.get_cookies(self.cookie)
-        book_able = response.xpath("//div[@class='teacher']//li/input[@type='checkbox']/@id").extract()
-        for lesson in book_able:
-            if lesson in self.need_book_lessons:
-                print "lesson:",lesson
-                yield FormRequest(url='http://www.51talk.com/reserve/doReserve',cookies=cookie_text,
-                                          formdata={
-                                              'appoint_type':'multi',
-                                              't_id': lesson,
-                                              'date_time': lesson,
-                                              'showCustom': '0',
-                                              'reduceCount': '0',
-                                              'intelligent': '2',
-                                              'ec_course_max': '100',
-                                              'is_course_new': 'new',
-                                              'show_freetalk': '1',
-                                              'has_freetalk_course': 'n',
-                                              'cla_en': 'new',
-                                              'tool': '51TalkAC',
-                                              'lm_self_introduction': '2',
-                                              'lm_recovery': '2',
-                                          },
-                                          callback=self.book_lesson_result
-                                          )
-
-    def book_lesson_result(self,response):
+        payload = {
+            'appoint_type': 'multi',
+            't_id': teacher_id,
+            'date_time': lesson_id,
+            'showCustom': '0',
+            'reduceCount': '0',
+            'intelligent': '2',
+            'ec_course_max': '100',
+            'is_course_new': 'new',
+            'show_freetalk': '1',
+            'has_freetalk_course': 'n',
+            'cla_en': 'new',
+            'tool': '51TalkAC',
+            'lm_self_introduction': '2',
+            'lm_recovery': '2',
+        }
+        session = requests.session()
+        session.headers.update({"Cookie": self.cookie})
+        r = session.post("http://www.51talk.com/reserve/doReserve", data=payload)
+        print r.text
         print '============'
-        print response.text
-        # os.abort(）
-        #停止爬取
-        # https://groups.google.com/forum/m/#!msg/python-cn/3wcbVkOANdE/hS1CpP4bVuQJ
-
-
 
 
 
