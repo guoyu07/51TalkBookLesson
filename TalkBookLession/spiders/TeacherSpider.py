@@ -11,6 +11,8 @@ class TeacherSpider(CrawlSpider):
     name = 'TeacherSpider'
     download_delay = 5
     allowed_domains = ['51talk.com']
+    allowed_page = 10   #允许每个上课时间所爬取得最大页数
+    min_faver_count = 1000 #最少的收藏数
     # start_urls = ['http://www.51talk.com/reserve/index']
     # http://www.51talk.com/reserve/index?type=ph&Date=20170511&selectTime=13&course=fiveone&pageID=2&useSearch=y#goto
     # http://www.51talk.com/reserve/index?type=ph&Date=20170511&selectTime=13&course=fiveone&useSearch=y
@@ -38,7 +40,7 @@ class TeacherSpider(CrawlSpider):
     def get_request_url(self):
         urls = []
         for lesson in self.need_book_lessons:
-            for i in range(1,2):
+            for i in range(1,self.allowed_page + 1):
                 url = u'http://www.51talk.com/reserve/index?type=ph&Date={0}&selectTime={1}&course=fiveone&pageID={2}&useSearch=y'.format(lesson.split('_')[0],lesson.split('_')[1],i)
                 print url
                 # yield url
@@ -69,7 +71,7 @@ class TeacherSpider(CrawlSpider):
         favor_state = response.xpath('//div[@class="favor f-fr"]/p/text()').extract_first(default="N/A")
         teacher_id = response.url.split('?')[0].split('/')[-1]
         favor_count = favor_state.replace(u'人收藏','')
-        if int(favor_count) > 10:
+        if int(favor_count) >= self.min_faver_count:
             print favor_count,
         else:
             return
