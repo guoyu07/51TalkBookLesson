@@ -11,8 +11,20 @@ class TeacherSpider(CrawlSpider):
     allowed_domains = ['51talk.com']
     start_urls = ['http://www.51talk.com/reserve/index']
     rules = (
-        Rule(LinkExtractor(allow=('http://www.51talk.com/teacher/info/t\d{9}')),process_request='request_teacher',callback='parse_teacher_lesson',follow=True,),
+        Rule(LinkExtractor(allow=('http://www.51talk.com/teacher/info/t\d{7,10}')),process_request='request_teacher',callback='parse_teacher_lesson',follow=True,),
     )
+    better_teachers = []
+    need_book_lessons = ['20170512_44',
+                         '20170516_44','20170516_45',
+                         '20170517_44','20170517_45',
+                         '20170518_44','20170518_45',
+                         '20170519_44','20170519_45',
+                         '20170520_45',
+                         '20170521_44','20170521_45',
+                         '20170522_44','20170522_45',
+                         '20170523_44','20170523_45'
+                         ]
+
 
     #http://www.51talk.com/teacher/info/t432950510
     # url_pattern = ['http://www.51talk.com/teacher/info/t39644339']
@@ -35,11 +47,24 @@ class TeacherSpider(CrawlSpider):
 
     def request_teacher(self, request):
         cookie_text = self.get_cookies(self.cookie)
-        return Request(request.url,callback=self.parse_teacher_lesson,cookies=cookie_text)
+        tagged = request.replace(cookies=cookie_text)
+        return tagged
+        # return Request(request.url,callback=self.parse_teacher_lesson,cookies=cookie_text)
 
     def parse_teacher_lesson(self,response):
+        favor_state = response.xpath('//div[@class="favor f-fr"]/p/text()').extract_first(default="N/A")
+        favor_count = favor_state.replace(u'人收藏','')
+        if int(favor_count) > 1000:
+            print favor_count,
+        else:
+            return
+
         book_able = response.xpath("//div[@class='teacher']//li/input[@type='checkbox']/@id").extract()
-        print [x for x in  book_able]
+        for lesson in book_able:
+            if lesson in self.need_book_lessons:
+                print lesson
+
+
 
 
 
