@@ -1,5 +1,5 @@
 # 51TalkBookLesson
-通过爬虫自动预约51Talk上的课程
+通过scrapy自动预约51Talk上菲律宾老师的的课程
 
 # 使用方法
 ##### 1、创建Cookie
@@ -10,8 +10,8 @@
 * 1、在[TeacherSpider.py](https://github.com/one-smiling/51TalkBookLesson/blob/master/TalkBookLession/spiders/TeacherSpider.py)文件配置你需要的设置和预约的课程，具体配置如下:
 
 	```
-	allowed_page = 1   #允许每个上课时间所爬取得最大页数
-	min_faver_count = 10 #外教老师最少的收藏数
+	allowed_page = 10   #允许每个上课时间所爬取得最大页数
+	min_faver_count = 1000 #外教老师最少的收藏数
 	need_book_lessons = ['20170524_44','20170524_45']
 	```
 
