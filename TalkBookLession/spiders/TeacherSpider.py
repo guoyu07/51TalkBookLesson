@@ -4,15 +4,14 @@ from lxml import etree
 from scrapy.linkextractors import LinkExtractor
 from scrapy.spiders import CrawlSpider,Rule
 from scrapy.http import Request
-from scrapy.http import FormRequest
 import requests
 
 class TeacherSpider(CrawlSpider):
     name = 'TeacherSpider'
     download_delay = 5
     allowed_domains = ['51talk.com']
-    allowed_page = 10   #允许每个上课时间所爬取得最大页数
-    min_faver_count = 1000 #最少的收藏数
+    allowed_page = 1   #允许每个上课时间所爬取得最大页数
+    min_faver_count = 10 #最少的收藏数
     # start_urls = ['http://www.51talk.com/reserve/index']
     # http://www.51talk.com/reserve/index?type=ph&Date=20170511&selectTime=13&course=fiveone&pageID=2&useSearch=y#goto
     # http://www.51talk.com/reserve/index?type=ph&Date=20170511&selectTime=13&course=fiveone&useSearch=y
@@ -26,16 +25,30 @@ class TeacherSpider(CrawlSpider):
                          # '20170517_44','20170517_45',
                          # '20170518_44','20170518_45',
                          # '20170519_44','20170519_45',
-                         # '20170520_45',
+                         # '20170520_44','20170520_45',
                          # '20170521_44','20170521_45',
                          # '20170522_44','20170522_45',
-                         '20170523_44','20170523_45'
-                         ]
+                         # '20170523_44','20170523_45',
+                         '20170524_44','20170524_45'
+    ]
     #http://www.51talk.com/teacher/info/t432950510
     # url_pattern = ['http://www.51talk.com/teacher/info/t39644339']
     # url_extractor = LxmlLinkExtractor(allow="http://www.51talk.com/teacher/info/t39644339")
-    cookie = 'user_tk_checkFg=1; visitid=3EF32499DE51ADD48AA439A3A13F9BFBMNzTAF40NYTWAx2rNMzjYAO0O0Ox; servChkFlag=sso; uuid=8ee79dc96865c77976d4929f07730dd9; remember_user=y; CNZZDATA1253020514=901012977-1493781924-http%253A%252F%252Fwww.51talk.com%252F%7C1494308562; price_show_type=4; aliyungf_tc=AQAAAF4X60IGcwAAXlTKb6KZmwQyG6Lu; NTKF_T2D_CLIENTID=guest3E0EB7A7-E139-EDC1-DFC1-CC682FF9D59A; nTalk_CACHE_DATA={uid:kf_9992_ISME9754_uid-0_nickname-,tid:1494322864235111}; Hm_lpvt_cd5cd03181b14b3269f31c9cc8fe277f=1494324405; Hm_lvt_cd5cd03181b14b3269f31c9cc8fe277f=1493783003,1494212227,1494307257; SpMLdaPx_poid=134; SpMLdaPx_pvid=1494324404823; SpMLdaPx_sid=4001506188; __utma=108070726.1864109400.1490844974.1494313076.1494318321.7; __utmc=108070726; __utmz=108070726.1490844974.1.1.utmcsr=(direct)|utmccn=(direct)|utmcmd=(none); _gscbrs_551672857=1; _gscu_551672857=90844973bmmhnb20; servChkFlag=sso; user_usg=MCwCFFDy7d62oK16Z3imCy%2FhoG%2FNqvhiAhQ%2BkoZscl5ORI4vWfq4gBOngzsxFw%3D%3D; user_ust=I%2B0RRTZJXlqyb0QnGhWSOLl%2BkLWHoqN326R%2FBvKGpSDbnj0CZPtenUISk4W%2F0iym91Ci9dweYOxUwLjyO9aZZToRTQ8kyJFnVOS0MOc%3D; www_ugroup=4; PHPSESSID=8pg34qihpjmvrlvr9hh4059u04; global=5e07df5e-f0de-43dd-9a36-2920831cde62; UM_distinctid=15bcc67db977c0-0893999e8aa9f78-4a1b3104-1fa400-15bcc67db98921; from_url=www.51talk.com; SpMLdaPx_uuid=3511360630'
+    cookie = ''
 
+    #添加参数
+    #http://blog.csdn.net/q_an1314/article/details/50748700
+    def __init__(self,cookie=None, *args, **kwargs):
+        super(TeacherSpider, self).__init__(*args, **kwargs)
+        extern_cookie = '; aliyungf_tc=AQAAADYcVRrnUwgAXlTKb0sABqSD/ARo; servChkFlag=sso'
+        self.cookie = (self.get_cookie_from_file(cookie) + extern_cookie).replace('\n', '')
+        print(self.cookie)
+
+    def get_cookie_from_file(self,cookie_file):
+        f = open(cookie_file, 'r')
+        cookie = f.readline()
+        f.close()
+        return cookie
 
     def get_request_url(self):
         urls = []
@@ -61,6 +74,13 @@ class TeacherSpider(CrawlSpider):
         for url in self.get_request_url():
             yield Request(url,cookies=cookie_text)
 
+    def parse(self, response):
+        auto_login_text = response.xpath('/html/head/title/text()').extract_first(default='N/A')
+        if auto_login_text == u'自动登录中':
+            print 'cookie无效，退出程序'
+            os.abort()
+        return super(TeacherSpider,self).parse(response)
+
     def request_teacher(self, request):
         cookie_text = self.get_cookies(self.cookie)
         tagged = request.replace(cookies=cookie_text)
@@ -72,7 +92,7 @@ class TeacherSpider(CrawlSpider):
         teacher_id = response.url.split('?')[0].split('/')[-1]
         favor_count = favor_state.replace(u'人收藏','')
         if int(favor_count) >= self.min_faver_count:
-            print favor_count,
+            print u'teacher_id为{}的老师有{}'.format(teacher_id,favor_state)
         else:
             return
         book_able = response.xpath("//div[@class='teacher']//li/input[@type='checkbox']/@id").extract()
@@ -81,8 +101,7 @@ class TeacherSpider(CrawlSpider):
                 self.book_lesson_for_id(teacher_id,lesson)
 
     def book_lesson_for_id(self,teacher_id,lesson_id):
-        print teacher_id,lesson_id
-
+        print u'开始预约teacher_id为{}日期为{}的课程'.format(teacher_id,lesson_id)
         '''
         os.abort(）
         停止爬取
