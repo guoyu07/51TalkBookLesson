@@ -1,10 +1,10 @@
 # 51TalkBookLesson
-通过scrapy自动预约51Talk上菲律宾老师的的课程
+通过scrapy自动预约51Talk上菲律宾老师的的课程，使用Python2.7编写
 
 # 使用方法
 ### 1、创建Cookie
 * 1、在根目录下创建一个名字为cookie的文件
-* 2、用浏览器登录51talk,在开发模式下的控制台输入 `document.cookie`按回车，将cooke输出并粘贴到cookie文件，不需要双引号
+* 2、用浏览器登录51talk,在开发模式下的控制台输入 `document.cookie`按回车，将cookie输出并粘贴到cookie文件，不需要双引号
 
 ### 2、配置
 * 1、在[TeacherSpider.py](https://github.com/one-smiling/51TalkBookLesson/blob/master/TalkBookLession/spiders/TeacherSpider.py)文件配置你需要的设置和预约的课程，具体配置如下:
